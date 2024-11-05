@@ -1,11 +1,6 @@
-# 仅完成了爬取链接，将链接中的内容爬取下来并进行了简单的文本处理
-# 仍然存在问题：爬取的内容中包含了大量的无用信息，需要进一步处理
-
-import os
 import re
 from operator import index
 from random import random
-
 import jieba
 import nltk
 from matplotlib import pyplot as plt
