@@ -1,10 +1,8 @@
 import re
-from operator import index
-from random import random
-import jieba
+import jieba.analyse
 import nltk
-from matplotlib import pyplot as plt
 from nltk import word_tokenize
+from matplotlib import pyplot as plt
 from bs4 import BeautifulSoup
 import os
 import time
@@ -13,24 +11,36 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from wordcloud import WordCloud
+import random  # Import random module
 
-# 设置爬取后的文件名
-filename = "linkList.txt"
-# 设置爬取后的文件存储路径
-filepath = r"D:\大学\学习\软件需求工程\spider"
-# 设置爬取后的文件的完整路径
-full_path = os.path.join(filepath, filename)
+# Ensure the output directory exists
+output_dir = "./data"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
-textfile = "text.txt"
-text_full_path = os.path.join(filepath, textfile)
+# Set file paths
+urls_file = "urls_list.txt"
+urls_file_path = os.path.join(output_dir, urls_file)
+
+job_descriptions_file = "job_descriptions.txt"
+job_descriptions_path = os.path.join(output_dir, job_descriptions_file)
+
+cleaned_text_file = "cleaned_text.txt"
+cleaned_text_path = os.path.join(output_dir, cleaned_text_file)
+
+keywords_file = "keywords.txt"
+keywords_file_path = os.path.join(output_dir, keywords_file)
+
+wordcloud_image_file = "wordcloud.png"
+wordcloud_image_path = os.path.join(output_dir, wordcloud_image_file)
 
 def spider4url():
     # 启动 Edge 浏览器
     browser = webdriver.Edge()
     # 设置要访问的 URL
     url_base = "https://www.zhaopin.com/sou/jl736/kwCLO66RJ32PHPG/p"
-    uer_page = 1
-    url = url_base + str(uer_page)
+    user_page = 1
+    url = url_base + str(user_page)
     # 打开 URL
     browser.get(url)
     # 等待 3 秒以确保页面加载完成
@@ -42,10 +52,10 @@ def spider4url():
     # 查找所有 class 为 'jobinfo__top' 的 div 标签
     div_tags = soup.find_all("div", class_='jobinfo__top')
     # 打开一个文件进行写入
-    with open(full_path, 'w', encoding='utf-8') as file:
+    with open(urls_file_path, 'w', encoding='utf-8') as file:
         count = 0
         # 爬取20页数据（20*10）
-        for uer_page in range(1, 21):
+        for user_page in range(1, 21):
             # 遍历所有找到的 div 标签
             for i in div_tags:
                 print("正在爬取第", count, "条数据")
@@ -103,7 +113,9 @@ def fetch_text_from_url(url, index):
     finally:
         # 关闭浏览器
         browser.quit()
+
 regions = ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '西安', '南京', '天津']
+
 def clean_text(text):
     # Tokenization
     tokens_zh = jieba.lcut(text)  # Chinese tokenization
@@ -134,7 +146,6 @@ def clean_text(text):
         '从', '想', '用', '地', '再', '只', '如', '被', '并', '其', '此', '已', '些', '什么', '来', '因为',
         '所以', '而且', '或者', '或', '如果', '虽然', '但是', '然后', '那么', '就是', '还有', '以及', '并且',
         '以上学历','业务'
-
     }
     stop_words_en = set(nltk.corpus.stopwords.words('english'))
 
@@ -149,6 +160,7 @@ def clean_text(text):
     # Combine tokens
     cleaned_text = ' '.join(tokens_zh + tokens_en)
     return cleaned_text
+
 def process_file(input_path, output_path):
     with open(input_path, 'r', encoding='utf-8') as infile, open(output_path, 'w', encoding='utf-8') as outfile:
         for line in infile:
@@ -193,30 +205,16 @@ def generate_wordcloud(keywords, output_image_path):
     plt.axis('off')
     plt.savefig(output_image_path)
     plt.show()
-# 按装订区域中的绿色按钮以运行脚本。
+
 if __name__ == '__main__':
-    input_path = r'D:\大学\学习\软件需求工程\spider\cleanedtext.txt'
-    output_path = r'D:\大学\学习\软件需求工程\spider\upperProcess.txt'
-    output_image_path = r'D:\大学\学习\软件需求工程\spider\wordcloud.png'
     spider4url()
-    filepath = r"D:\大学\学习\软件需求工程\spider\linkList.txt"
-    urls = read_urls(filepath)
-
-    input_file = r"D:\大学\学习\软件需求工程\spider\linkList.txt"
-    output_file = r"D:\大学\学习\软件需求工程\spider\jobinfo2.txt"
-
-    # 检查输入文件是否存在
-    if not os.path.exists(input_file):
-        print(f"输入文件不存在: {input_file}")
-
-    with open(input_file, 'r', encoding='utf-8') as f:
-        urls = f.readlines()
+    urls = read_urls(urls_file_path)
 
     total = len(urls)
     print(f"共有 {total} 个URL需要处理。")
 
     try:
-        with open(output_file, 'w', encoding='utf-8') as outfile:
+        with open(job_descriptions_path, 'w', encoding='utf-8') as outfile:
             for index, url in enumerate(urls, 1):
                 url = url.strip()
                 if not url:
@@ -238,10 +236,10 @@ if __name__ == '__main__':
     finally:
         print("文本详情爬取结束。")
 
-    process_file(input_path, output_path)
+    process_file(job_descriptions_path, cleaned_text_path)
 
-    keywords = extract_keywords(input_path, output_path)
-    generate_wordcloud(keywords, output_image_path)
-    print(f"Keywords have been saved to: {output_path}")
-    print(f"Word cloud image has been saved to: {output_image_path}")
+    keywords = extract_keywords(cleaned_text_path, keywords_file_path)
+    generate_wordcloud(keywords, wordcloud_image_path)
+    print(f"Keywords have been saved to: {keywords_file_path}")
+    print(f"Word cloud image has been saved to: {wordcloud_image_path}")
     print("程序结束。")
