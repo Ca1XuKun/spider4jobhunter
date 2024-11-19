@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+#@author qch_whut
 def scrape_job_description(url, index):
     # 启动 Edge 浏览器
     browser = webdriver.Edge()
